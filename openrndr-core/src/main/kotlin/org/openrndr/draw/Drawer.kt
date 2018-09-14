@@ -535,7 +535,7 @@ data class DrawContext(val model: Matrix44, val view: Matrix44, val projection: 
 }
 
 @Suppress("MemberVisibilityCanPrivate", "unused")
-class Drawer(val driver: Driver) {
+class Drawer(val driver: Driver) : VectorDrawer {
 
     val bounds: Rectangle
         get() = Rectangle(Vector2(0.0, 0.0), width * 1.0, height * 1.0)
@@ -560,7 +560,7 @@ class Drawer(val driver: Driver) {
     var width: Int = 0
     var height: Int = 0
 
-    var model: Matrix44 = Matrix44.IDENTITY
+    override var model: Matrix44 = Matrix44.IDENTITY
     var view: Matrix44 = Matrix44.IDENTITY
     var projection: Matrix44 = Matrix44.IDENTITY
 
@@ -614,11 +614,11 @@ class Drawer(val driver: Driver) {
         view *= _lookAt(from, to, up)
     }
 
-    fun scale(s: Double) {
+    override fun scale(s: Double) {
         model *= _scale(s, s, s)
     }
 
-    fun scale(x: Double, y: Double) {
+    override fun scale(x: Double, y: Double) {
         model *= _scale(x, y, 1.0)
     }
 
@@ -626,7 +626,7 @@ class Drawer(val driver: Driver) {
         model *= _scale(x, y, z)
     }
 
-    fun translate(t: Vector2) {
+    override fun translate(t: Vector2) {
         model *= _translate(t.vector3())
     }
 
@@ -642,7 +642,7 @@ class Drawer(val driver: Driver) {
         model *= _translate(Vector3(x, y, z))
     }
 
-    fun rotate(rotationInDegrees: Double) {
+    override fun rotate(rotationInDegrees: Double) {
         model *= rotateZ(rotationInDegrees)
     }
 
@@ -668,8 +668,8 @@ class Drawer(val driver: Driver) {
         view = viewStack.pop()
     }
 
-    fun pushModel(): Matrix44 = modelStack.push(model)
-    fun popModel() {
+    override fun pushModel(): Matrix44 = modelStack.push(model)
+    override fun popModel() {
         model = modelStack.pop()
     }
 
@@ -716,19 +716,19 @@ class Drawer(val driver: Driver) {
         get() = drawStyle.shadeStyle
 
 
-    var fill: ColorRGBa?
+    override var fill: ColorRGBa?
         set(value) {
             drawStyle.fill = value
         }
         get() = drawStyle.fill
 
-    var stroke: ColorRGBa?
+    override var stroke: ColorRGBa?
         set(value) {
             drawStyle.stroke = value
         }
         get() = drawStyle.stroke
 
-    var strokeWeight: Double
+    override var strokeWeight: Double
         set(value) {
             drawStyle.strokeWeight = value
         }
@@ -795,7 +795,7 @@ class Drawer(val driver: Driver) {
         circleDrawer.drawCircles(context, drawStyle, circles)
     }
 
-    fun shape(shape: Shape) {
+    override fun shape(shape: Shape) {
         if (RenderTarget.active.hasDepthBuffer) {
             if (shape.contours.size > 1 || shape.contours[0].closed) {
                 qualityPolygonDrawer.drawPolygon(context, drawStyle,
@@ -809,7 +809,7 @@ class Drawer(val driver: Driver) {
         }
     }
 
-    fun contour(contour: ShapeContour) {
+    override fun contour(contour: ShapeContour) {
         if (RenderTarget.active.hasDepthBuffer) {
             if (drawStyle.fill != null && contour.closed) {
                 qualityPolygonDrawer.drawPolygon(context, drawStyle, listOf(contour.adaptivePositions()))
@@ -832,7 +832,7 @@ class Drawer(val driver: Driver) {
         }
     }
 
-    fun contours(contours: List<ShapeContour>) {
+    override fun contours(contours: List<ShapeContour>) {
         if (drawStyle.fill != null) {
             qualityPolygonDrawer.drawPolygons(context, drawStyle, contours.map { listOf(it.adaptivePositions()) })
         }
@@ -842,15 +842,15 @@ class Drawer(val driver: Driver) {
         }
     }
 
-    fun lineSegment(x0: Double, y0: Double, x1: Double, y1: Double) {
+    override fun lineSegment(x0: Double, y0: Double, x1: Double, y1: Double) {
         lineSegment(Vector2(x0, y0), Vector2(x1, y1))
     }
 
-    fun lineSegment(lineSegment: LineSegment) {
+    override fun lineSegment(lineSegment: LineSegment) {
         lineSegment(lineSegment.start, lineSegment.end)
     }
 
-    fun lineSegment(start: Vector2, end: Vector2) {
+    override fun lineSegment(start: Vector2, end: Vector2) {
         when (drawStyle.quality) {
             DrawQuality.PERFORMANCE -> fastLineDrawer.drawLineSegments2(context, drawStyle, listOf(start, end))
             DrawQuality.QUALITY -> qualityLineDrawer.drawLineStrips(context, drawStyle, listOf(listOf(start, end)))
@@ -861,7 +861,7 @@ class Drawer(val driver: Driver) {
         fastLineDrawer.drawLineSegments3(context, drawStyle, listOf(start, end))
     }
 
-    fun lineSegments(segments: List<Vector2>) {
+    override fun lineSegments(segments: List<Vector2>) {
         when (drawStyle.quality) {
             DrawQuality.PERFORMANCE -> fastLineDrawer.drawLineSegments2(context, drawStyle, segments)
             DrawQuality.QUALITY -> {
@@ -874,7 +874,7 @@ class Drawer(val driver: Driver) {
         }
     }
 
-    fun lineSegments(segments: List<Vector2>, weights: List<Double>) {
+    override fun lineSegments(segments: List<Vector2>, weights: List<Double>) {
         when (drawStyle.quality) {
             DrawQuality.PERFORMANCE -> fastLineDrawer.drawLineSegments2(context, drawStyle, segments)
             DrawQuality.QUALITY -> {
@@ -892,21 +892,21 @@ class Drawer(val driver: Driver) {
         fastLineDrawer.drawLineSegments3(context, drawStyle, segments)
     }
 
-    fun lineLoop(points: List<Vector2>) {
+    override fun lineLoop(points: List<Vector2>) {
         when (drawStyle.quality) {
             DrawQuality.PERFORMANCE -> fastLineDrawer.drawLineLoops(context, drawStyle, listOf(points))
             DrawQuality.QUALITY -> qualityLineDrawer.drawLineLoops(context, drawStyle, listOf(points))
         }
     }
 
-    fun lineLoops(loops: List<List<Vector2>>) {
+    override fun lineLoops(loops: List<List<Vector2>>) {
         when (drawStyle.quality) {
             DrawQuality.PERFORMANCE -> fastLineDrawer.drawLineLoops(context, drawStyle, loops)
             DrawQuality.QUALITY -> qualityLineDrawer.drawLineLoops(context, drawStyle, loops)
         }
     }
 
-    fun lineLoops(loops: List<List<Vector2>>, weights: List<Double>) {
+    override fun lineLoops(loops: List<List<Vector2>>, weights: List<Double>) {
         when (drawStyle.quality) {
             DrawQuality.PERFORMANCE -> fastLineDrawer.drawLineLoops(context, drawStyle, loops)
             DrawQuality.QUALITY -> qualityLineDrawer.drawLineLoops(context, drawStyle, loops, weights)
@@ -914,21 +914,21 @@ class Drawer(val driver: Driver) {
     }
 
 
-    fun lineStrip(points: List<Vector2>) {
+    override fun lineStrip(points: List<Vector2>) {
         when (drawStyle.quality) {
             DrawQuality.PERFORMANCE -> fastLineDrawer.drawLineLoops(context, drawStyle, listOf(points))
             DrawQuality.QUALITY -> qualityLineDrawer.drawLineStrips(context, drawStyle, listOf(points))
         }
     }
 
-    fun lineStrips(strips: List<List<Vector2>>) {
+    override fun lineStrips(strips: List<List<Vector2>>) {
         when (drawStyle.quality) {
             DrawQuality.PERFORMANCE -> fastLineDrawer.drawLineLoops(context, drawStyle, strips)
             DrawQuality.QUALITY -> qualityLineDrawer.drawLineStrips(context, drawStyle, strips)
         }
     }
 
-    fun lineStrips(strips: List<List<Vector2>>, weights: List<Double>) {
+    override fun lineStrips(strips: List<List<Vector2>>, weights: List<Double>) {
         when (drawStyle.quality) {
             DrawQuality.PERFORMANCE -> fastLineDrawer.drawLineLoops(context, drawStyle, strips)
             DrawQuality.QUALITY -> qualityLineDrawer.drawLineStrips(context, drawStyle, strips, weights)
@@ -936,7 +936,7 @@ class Drawer(val driver: Driver) {
     }
 
 
-    fun composition(composition: Composition) {
+    override fun composition(composition: Composition) {
         pushStyle()
         fill = ColorRGBa.BLACK
         stroke = null
